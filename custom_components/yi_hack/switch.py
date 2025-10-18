@@ -17,7 +17,7 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the Yi Camera switches from a config entry."""
-    if (config_entry.data[CONF_HACK_NAME] == DEFAULT_BRAND) or (config_entry.data[CONF_HACK_NAME] == MSTAR):
+    if (config_entry.data[CONF_HACK_NAME] == DEFAULT_BRAND):
         entities = [
             YiHackSwitch(hass, config_entry, "switch_on", "Switch On"),
             YiHackSwitch(hass, config_entry, "save_video_on_motion", "Save Video on Motion"),
@@ -26,10 +26,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             YiHackSwitch(hass, config_entry, "ir", "IR"),
             YiHackSwitch(hass, config_entry, "rotate", "Rotate"),
         ]
-    elif (config_entry.data[CONF_HACK_NAME] == V5):
+    elif (config_entry.data[CONF_HACK_NAME] == V5) or (config_entry.data[CONF_HACK_NAME] == MSTAR):
         entities = [
             YiHackSwitch(hass, config_entry, "switch_on", "Switch On"),
-#            YiHackSwitch(hass, config_entry, "motion_detection", "Motion Detection"),
             YiHackSwitch(hass, config_entry, "save_video_on_motion", "Save Video on Motion"),
             YiHackSwitch(hass, config_entry, "sound_detection", "Sound Detection"),
             YiHackSwitch(hass, config_entry, "baby_crying_detect", "Baby Crying Detect"),

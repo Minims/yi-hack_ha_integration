@@ -27,13 +27,13 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry, async_add_entities):
     """Set up MQTT motion sensors."""
-    if (config.data[CONF_HACK_NAME] == DEFAULT_BRAND) or (config.data[CONF_HACK_NAME] == MSTAR):
+    if (config.data[CONF_HACK_NAME] == DEFAULT_BRAND):
         entities = [
             YiMQTTBinarySensor(config, "status", "Status"),
             YiMQTTBinarySensor(config, "motion_detection", "Motion Detection"),
             YiMQTTBinarySensor(config, "baby_crying", "Baby Crying"),
         ]
-    elif (config.data[CONF_HACK_NAME] == V5):
+    elif (config.data[CONF_HACK_NAME] == V5) or (config.data[CONF_HACK_NAME] == MSTAR):
         entities = [
             YiMQTTBinarySensor(config, "status", "Status"),
             YiMQTTBinarySensor(config, "motion_detection", "Motion Detection"),
