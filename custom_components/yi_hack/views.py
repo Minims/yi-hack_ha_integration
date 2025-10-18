@@ -49,8 +49,11 @@ class VideoProxyView(HomeAssistantView):
 
         hack_name = ""
         for config_entry in self.hass.config_entries.async_entries(DOMAIN):
-            if config_entry.data[CONF_NAME] == kwargs['entry_id']:
-                hack_name = config_entry.data[CONF_HACK_NAME]
+            try:
+                if config_entry.data[CONF_NAME] == kwargs['entry_id']:
+                    hack_name = config_entry.data[CONF_HACK_NAME]
+            except KeyError:
+                _LOGGER.debug("No name for this entry")
 
         file_path = kwargs['file_path']
         if hack_name == SONOFF:
@@ -83,11 +86,14 @@ class VideoProxyView(HomeAssistantView):
 
         host = ""
         for config_entry in self.hass.config_entries.async_entries(DOMAIN):
-            if config_entry.data[CONF_NAME] == kwargs['entry_id']:
-                host = config_entry.data[CONF_HOST]
-                port = config_entry.data[CONF_PORT]
-                user = config_entry.data[CONF_USERNAME]
-                password = config_entry.data[CONF_PASSWORD]
+            try:
+                if config_entry.data[CONF_NAME] == kwargs['entry_id']:
+                    host = config_entry.data[CONF_HOST]
+                    port = config_entry.data[CONF_PORT]
+                    user = config_entry.data[CONF_USERNAME]
+                    password = config_entry.data[CONF_PASSWORD]
+            except KeyError:
+                _LOGGER.debug("No name for this entry")
 
         if host == "":
             return web.Response(status=HTTPStatus.BAD_REQUEST)

@@ -6,17 +6,18 @@ import logging
 import requests
 from requests.auth import HTTPBasicAuth
 
-from homeassistant.components.media_player.const import (
+from homeassistant.components.media_player import (
+    BrowseError,
     MediaClass,
     MediaType
 )
-from homeassistant.components.media_player.errors import BrowseError
-from homeassistant.components.media_source.error import MediaSourceError, Unresolvable
-from homeassistant.components.media_source.models import (
+from homeassistant.components.media_source import (
     BrowseMediaSource,
     MediaSource,
+    MediaSourceError,
     MediaSourceItem,
-    PlayMedia
+    PlayMedia,
+    Unresolvable
 )
 from homeassistant.const import (
     CONF_HOST,
@@ -101,35 +102,40 @@ class YiHackMediaSource(MediaSource):
                 title=DOMAIN,
                 can_play=False,
                 can_expand=True,
-#                thumbnail=thumbnail,
             )
             media.children = []
             for config_entry in self.hass.config_entries.async_entries(DOMAIN):
-                title = config_entry.data[CONF_NAME]
-                for device in self._devices:
-                    if config_entry.data[CONF_NAME] == device.name:
-                        title = device.name_by_user if device.name_by_user is not None else device.name
+                try:
+                    title = config_entry.data[CONF_NAME]
+                    for device in self._devices:
+                        if config_entry.data[CONF_NAME] == device.name:
+                            title = device.name_by_user if device.name_by_user is not None else device.name
 
-                media_class = MediaClass.APP
-                child_dev = BrowseMediaSource(
-                    domain=DOMAIN,
-                    identifier=config_entry.data[CONF_NAME],
-                    media_class=media_class,
-                    media_content_type=MediaType.VIDEO,
-                    title=title,
-                    can_play=False,
-                    can_expand=True,
-#                    thumbnail=thumbnail,
-                )
-                media.children.append(child_dev)
+                    media_class = MediaClass.APP
+                    child_dev = BrowseMediaSource(
+                        domain=DOMAIN,
+                        identifier=config_entry.data[CONF_NAME],
+                        media_class=media_class,
+                        media_content_type=MediaType.VIDEO,
+                        title=title,
+                        can_play=False,
+                        can_expand=True,
+                    )
+                    media.children.append(child_dev)
+                except KeyError:
+                    _LOGGER.debug("No name for this entry")
 
         elif event_dir is None:
             for config_entry in self.hass.config_entries.async_entries(DOMAIN):
-                if config_entry.data[CONF_NAME] == entry_id:
-                    host = config_entry.data[CONF_HOST]
-                    port = config_entry.data[CONF_PORT]
-                    user = config_entry.data[CONF_USERNAME]
-                    password = config_entry.data[CONF_PASSWORD]
+                try:
+                    if config_entry.data[CONF_NAME] == entry_id:
+                        host = config_entry.data[CONF_HOST]
+                        port = config_entry.data[CONF_PORT]
+                        user = config_entry.data[CONF_USERNAME]
+                        password = config_entry.data[CONF_PASSWORD]
+                except KeyError:
+                    _LOGGER.debug("No name for this entry")
+
             if host == "":
                 return None
 
@@ -142,7 +148,6 @@ class YiHackMediaSource(MediaSource):
                 title=entry_id,
                 can_play=False,
                 can_expand=True,
-#                thumbnail=thumbnail,
             )
             try:
                 auth = None
@@ -181,18 +186,21 @@ class YiHackMediaSource(MediaSource):
                         title=title,
                         can_play=False,
                         can_expand=True,
-#                        thumbnail=thumbnail,
                     )
 
                     media.children.append(child_dir)
 
         else:
             for config_entry in self.hass.config_entries.async_entries(DOMAIN):
-                if config_entry.data[CONF_NAME] == entry_id:
-                    host = config_entry.data[CONF_HOST]
-                    port = config_entry.data[CONF_PORT]
-                    user = config_entry.data[CONF_USERNAME]
-                    password = config_entry.data[CONF_PASSWORD]
+                try:
+                    if config_entry.data[CONF_NAME] == entry_id:
+                        host = config_entry.data[CONF_HOST]
+                        port = config_entry.data[CONF_PORT]
+                        user = config_entry.data[CONF_USERNAME]
+                        password = config_entry.data[CONF_PASSWORD]
+                except KeyError:
+                    _LOGGER.debug("No name for this entry")
+
             if host == "":
                 return None
 
@@ -207,7 +215,6 @@ class YiHackMediaSource(MediaSource):
                 title=title,
                 can_play=False,
                 can_expand=True,
-#                thumbnail=thumbnail,
             )
 
             try:

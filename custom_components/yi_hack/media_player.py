@@ -17,9 +17,7 @@ from homeassistant.components.media_player import (
     MediaPlayerDeviceClass,
     MediaPlayerEnqueue,
     MediaPlayerEntity,
-    MediaPlayerEntityFeature
-)
-from homeassistant.components.media_player.browse_media import (
+    MediaPlayerEntityFeature,
     async_process_play_media_url
 )
 from homeassistant.const import (
