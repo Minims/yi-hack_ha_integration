@@ -13,13 +13,14 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .common import get_mqtt_conf, get_status, get_system_conf
 from .const import (ALLWINNER, ALLWINNERV2, CONF_ANIMAL_DETECTION_MSG,
                     CONF_BABY_CRYING_MSG, CONF_BIRTH_MSG, CONF_HACK_NAME,
+                    CONF_FIRMWARE_VERSION, CONF_HARDWARE_VERSION, CONF_MODEL,
                     CONF_HUMAN_DETECTION_MSG, CONF_MOTION_START_MSG,
                     CONF_MOTION_STOP_MSG, CONF_MQTT_PREFIX, CONF_RTSP_PORT,
                     CONF_SOUND_DETECTION_MSG, CONF_TOPIC_MOTION_DETECTION,
                     CONF_TOPIC_MOTION_DETECTION_IMAGE,
                     CONF_TOPIC_SOUND_DETECTION, CONF_TOPIC_STATUS,
                     CONF_VEHICLE_DETECTION_MSG, CONF_WILL_MSG, DEFAULT_BRAND,
-                    DOMAIN, MSTAR, SONOFF, V5)
+                    CONF_SERIAL, DOMAIN, MSTAR, SONOFF, V5)
 
 from .views import VideoProxyView
 
@@ -74,6 +75,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             CONF_WILL_MSG: mqtt_conf[CONF_WILL_MSG],
             CONF_TOPIC_MOTION_DETECTION_IMAGE: mqtt_conf[CONF_TOPIC_MOTION_DETECTION_IMAGE],
         }
+        status_metadata = {
+            CONF_FIRMWARE_VERSION: stat.get("fw_version"),
+            CONF_HARDWARE_VERSION: stat.get("hardware_id"),
+            CONF_MODEL: stat.get("model_suffix") or stat.get("model"),
+            CONF_SERIAL: stat.get("serial_number"),
+        }
+        updated_data.update(
+            {
+                key: value
+                for key, value in status_metadata.items()
+                if value not in (None, "", "N/A")
+            }
+        )
         if (entry.data[CONF_HACK_NAME] == DEFAULT_BRAND):
             updated_data.update(**{
                 CONF_RTSP_PORT: system_conf[CONF_RTSP_PORT],

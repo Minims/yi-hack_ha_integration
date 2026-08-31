@@ -12,17 +12,16 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_HOST,
     CONF_MAC,
-    CONF_NAME,
     CONF_PASSWORD,
     CONF_PORT,
     CONF_USERNAME,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DEFAULT_BRAND, DOMAIN, HTTP_TIMEOUT
+from .common import get_device_info
+from .const import HTTP_TIMEOUT
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -50,21 +49,8 @@ class YiHackRestartButton(ButtonEntity):
         self._username = config_entry.data[CONF_USERNAME]
         self._password = config_entry.data[CONF_PASSWORD]
 
-        mac = config_entry.data[CONF_MAC]
-        device_name = config_entry.data[CONF_NAME]
-        configuration_url = f"http://{self._host}"
-        if self._port != 80:
-            configuration_url += f":{self._port}"
-
-        self._attr_unique_id = f"{mac}_restart"
-        self._attr_device_info = {
-            "name": device_name,
-            "connections": {(CONNECTION_NETWORK_MAC, mac)},
-            "identifiers": {(DOMAIN, mac)},
-            "manufacturer": DEFAULT_BRAND,
-            "model": DOMAIN,
-            "configuration_url": configuration_url,
-        }
+        self._attr_unique_id = f"{config_entry.data[CONF_MAC]}_restart"
+        self._attr_device_info = get_device_info(config_entry)
 
     def press(self) -> None:
         """Restart the camera."""
