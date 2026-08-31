@@ -31,9 +31,10 @@ PLATFORMS = [
     "media_player",
     "select",
     "switch",
+    "update",
 ]
-PLATFORMS_SONOFF = ["button", "camera", "binary_sensor", "select", "switch"]
-PLATFORMS_V5 = ["button", "camera", "binary_sensor", "select", "switch"]
+PLATFORMS_SONOFF = ["button", "camera", "binary_sensor", "select", "switch", "update"]
+PLATFORMS_V5 = ["button", "camera", "binary_sensor", "select", "switch", "update"]
 
 _LOGGER = logging.getLogger(__name__)
 

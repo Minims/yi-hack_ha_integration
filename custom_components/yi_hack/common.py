@@ -93,6 +93,47 @@ def get_status(config):
 
     return response.json()
 
+
+def get_firmware_info(config):
+    """Get installed and available firmware versions from the camera."""
+    host = config[CONF_HOST]
+    port = config[CONF_PORT]
+    user = config[CONF_USERNAME]
+    password = config[CONF_PASSWORD]
+
+    auth = None
+    if user or password:
+        auth = HTTPBasicAuth(user, password)
+
+    try:
+        response = requests.get(
+            f"http://{host}:{port}/cgi-bin/fw_upgrade.sh?get=info",
+            timeout=HTTP_TIMEOUT,
+            auth=auth,
+        )
+        if response.status_code >= 300:
+            _LOGGER.error("Failed to get firmware information from device %s", host)
+            return None
+
+        info = response.json()
+    except (requests.exceptions.RequestException, ValueError) as error:
+        _LOGGER.error(
+            "Failed to get firmware information from device %s: error %s",
+            host,
+            error,
+        )
+        return None
+
+    if info.get("error") in (True, "true"):
+        _LOGGER.error(
+            "Camera %s failed to check for firmware updates: %s",
+            host,
+            info.get("description", "unknown error"),
+        )
+        return None
+
+    return info
+
 def get_system_conf(config):
     """Get system configuration from camera."""
     host = config[CONF_HOST]

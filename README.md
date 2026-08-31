@@ -26,6 +26,7 @@ The wizard will connect to your cam and will install the following entities:
 - switches and selects to enable/disable some cam configuration
 - restart button
 - device information with model, serial number and firmware version
+- firmware update availability
 - ptz service (*)
 - speak service (only available if you install the internal tts engine from here https://github.com/roleoroleo/yi-hack-utils)
 
