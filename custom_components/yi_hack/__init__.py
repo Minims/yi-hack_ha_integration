@@ -23,9 +23,16 @@ from .const import (ALLWINNER, ALLWINNERV2, CONF_ANIMAL_DETECTION_MSG,
 
 from .views import VideoProxyView
 
-PLATFORMS = ["camera", "binary_sensor", "media_player", "select", "switch"]
-PLATFORMS_SONOFF = ["camera", "binary_sensor", "select", "switch"]
-PLATFORMS_V5 = ["camera", "binary_sensor", "select", "switch"]
+PLATFORMS = [
+    "button",
+    "camera",
+    "binary_sensor",
+    "media_player",
+    "select",
+    "switch",
+]
+PLATFORMS_SONOFF = ["button", "camera", "binary_sensor", "select", "switch"]
+PLATFORMS_V5 = ["button", "camera", "binary_sensor", "select", "switch"]
 
 _LOGGER = logging.getLogger(__name__)
 
