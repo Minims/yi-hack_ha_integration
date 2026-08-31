@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import timedelta
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -15,11 +14,19 @@ from homeassistant.const import CONF_MAC, PERCENTAGE, UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .common import get_device_info, get_status
-from .const import ALLWINNER, ALLWINNERV2, CONF_HACK_NAME, MSTAR, SONOFF
-
-SCAN_INTERVAL = timedelta(seconds=60)
+from .common import get_device_info
+from .const import (
+    ALLWINNER,
+    ALLWINNERV2,
+    CONF_HACK_NAME,
+    DATA_COORDINATOR,
+    DOMAIN,
+    MSTAR,
+    SONOFF,
+)
+from .coordinator import YiHackDataUpdateCoordinator
 
 SENSOR_WIFI_QUALITY = "wifi_quality"
 SENSOR_STORAGE_FREE = "storage_free"
@@ -53,28 +60,37 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up yi-hack diagnostic sensors."""
+    coordinator: YiHackDataUpdateCoordinator = hass.data[DOMAIN][
+        config_entry.entry_id
+    ][DATA_COORDINATOR]
     async_add_entities(
         [
-            YiHackStatusSensor(config_entry, SENSOR_WIFI_QUALITY),
-            YiHackStatusSensor(config_entry, SENSOR_STORAGE_FREE),
-            YiHackStatusSensor(config_entry, SENSOR_UPTIME),
+            YiHackStatusSensor(coordinator, config_entry, SENSOR_WIFI_QUALITY),
+            YiHackStatusSensor(coordinator, config_entry, SENSOR_STORAGE_FREE),
+            YiHackStatusSensor(coordinator, config_entry, SENSOR_UPTIME),
         ],
-        True,
     )
 
 
-class YiHackStatusSensor(SensorEntity):
+class YiHackStatusSensor(
+    CoordinatorEntity[YiHackDataUpdateCoordinator], SensorEntity
+):
     """Representation of a value returned by status.json."""
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_has_entity_name = True
     _attr_state_class = SensorStateClass.MEASUREMENT
 
-    def __init__(self, config_entry: ConfigEntry, sensor_type: str) -> None:
+    def __init__(
+        self,
+        coordinator: YiHackDataUpdateCoordinator,
+        config_entry: ConfigEntry,
+        sensor_type: str,
+    ) -> None:
         """Initialize a status sensor."""
+        super().__init__(coordinator)
         self._config_entry = config_entry
         self._sensor_type = sensor_type
-        self._status: dict[str, Any] = {}
         self._attr_unique_id = f"{config_entry.data[CONF_MAC]}_{sensor_type}"
         self._attr_device_info = get_device_info(config_entry)
 
@@ -93,23 +109,13 @@ class YiHackStatusSensor(SensorEntity):
         else:
             raise ValueError(f"Unsupported sensor type: {sensor_type}")
 
-    async def async_update(self) -> None:
-        """Fetch the latest camera status."""
-        status = await self.hass.async_add_executor_job(
-            get_status, self._config_entry.data
-        )
-        if status is None:
-            self._attr_available = False
-            return
-
-        self._status = status
-        self._attr_available = True
-
     @property
     def native_value(self) -> int | None:
         """Return the current diagnostic value."""
+        status = self.coordinator.data
+
         if self._sensor_type == SENSOR_WIFI_QUALITY:
-            quality = _number(self._status.get("wlan_strength"))
+            quality = _number(status.get("wlan_strength"))
             if quality is None:
                 return None
             if self._config_entry.data[CONF_HACK_NAME] in RAW_WIFI_QUALITY_HACKS:
@@ -117,7 +123,7 @@ class YiHackStatusSensor(SensorEntity):
             return round(max(0, min(100, quality)))
 
         if self._sensor_type == SENSOR_STORAGE_FREE:
-            return _percentage(self._status.get("free_sd"))
+            return _percentage(status.get("free_sd"))
 
-        uptime = _number(self._status.get("uptime"))
+        uptime = _number(status.get("uptime"))
         return round(uptime) if uptime is not None else None

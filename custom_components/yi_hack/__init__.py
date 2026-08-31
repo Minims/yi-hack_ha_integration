@@ -5,12 +5,12 @@ import logging
 
 from homeassistant.components import mqtt
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_HOST, CONF_MAC, CONF_NAME
+from homeassistant.const import CONF_HOST, CONF_MAC
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .common import get_mqtt_conf, get_status, get_system_conf
+from .common import get_mqtt_conf, get_system_conf
 from .const import (ALLWINNER, ALLWINNERV2, CONF_ANIMAL_DETECTION_MSG,
                     CONF_BABY_CRYING_MSG, CONF_BIRTH_MSG, CONF_HACK_NAME,
                     CONF_FIRMWARE_VERSION, CONF_HARDWARE_VERSION, CONF_MODEL,
@@ -20,7 +20,8 @@ from .const import (ALLWINNER, ALLWINNERV2, CONF_ANIMAL_DETECTION_MSG,
                     CONF_TOPIC_MOTION_DETECTION_IMAGE,
                     CONF_TOPIC_SOUND_DETECTION, CONF_TOPIC_STATUS,
                     CONF_VEHICLE_DETECTION_MSG, CONF_WILL_MSG, DEFAULT_BRAND,
-                    CONF_SERIAL, DOMAIN, MSTAR, SONOFF, V5)
+                    CONF_SERIAL, DATA_COORDINATOR, DOMAIN, MSTAR, SONOFF, V5)
+from .coordinator import YiHackDataUpdateCoordinator
 
 from .views import VideoProxyView
 
@@ -59,17 +60,10 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up yi-hack from a config entry."""
 
-    device_name=entry.data[CONF_NAME]
-
     hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN][device_name] = {}
-
-    stat = await hass.async_add_executor_job(get_status, entry.data)
-
-    if stat is None:
-        raise ConfigEntryNotReady(
-            f"Unable to connect to camera at {entry.data[CONF_HOST]}"
-        )
+    coordinator = YiHackDataUpdateCoordinator(hass, entry)
+    await coordinator.async_config_entry_first_refresh()
+    stat = coordinator.data
 
     try:
         privacy = stat["privacy"]
@@ -142,6 +136,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             })
 
         hass.config_entries.async_update_entry(entry, data=updated_data)
+        hass.data[DOMAIN][entry.entry_id] = {DATA_COORDINATOR: coordinator}
 
         if (entry.data[CONF_HACK_NAME] == V5):
             await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS_V5)
@@ -176,7 +171,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
         unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
     if unload_ok:
-        device_name=entry.data[CONF_NAME]
-        hass.data[DOMAIN].pop(device_name)
+        hass.data[DOMAIN].pop(entry.entry_id)
 
     return unload_ok

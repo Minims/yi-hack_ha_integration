@@ -81,17 +81,23 @@ def get_status(config):
     try:
         response = requests.get("http://" + host + ":" + str(port) + "/cgi-bin/status.json", timeout=HTTP_TIMEOUT, auth=auth)
         if response.status_code >= 300:
-            _LOGGER.error("Failed to get status from device %s", host)
+            _LOGGER.debug("Failed to get status from device %s", host)
             error = True
     except requests.exceptions.RequestException as e:
-        _LOGGER.error("Failed to get status from device %s: error %s", host, e)
+        _LOGGER.debug("Failed to get status from device %s: error %s", host, e)
         error = True
 
     if error:
         response = None
         return None
 
-    return response.json()
+    try:
+        return response.json()
+    except ValueError as error:
+        _LOGGER.debug(
+            "Failed to decode status from device %s: error %s", host, error
+        )
+        return None
 
 
 def get_firmware_info(config):

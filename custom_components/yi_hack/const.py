@@ -1,6 +1,7 @@
 """Constants for yi_hack integration."""
 
 DOMAIN = "yi_hack"
+DATA_COORDINATOR = "coordinator"
 
 DEFAULT_BRAND = "yi-hack"
 DEFAULT_BRAND_R = "yi_hack"
