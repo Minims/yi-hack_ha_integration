@@ -7,6 +7,7 @@ from homeassistant.components import mqtt
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_MAC, CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .common import get_mqtt_conf, get_status, get_system_conf
@@ -39,13 +40,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     stat = await hass.async_add_executor_job(get_status, entry.data)
 
-    if stat is not None:
-        try:
-            privacy = stat["privacy"]
-            _LOGGER.error("Unsupported hack version (" + entry.data[CONF_HOST] + "), please update your cam")
-            return False
-        except KeyError:
-            privacy = None
+    if stat is None:
+        raise ConfigEntryNotReady(
+            f"Unable to connect to camera at {entry.data[CONF_HOST]}"
+        )
+
+    try:
+        privacy = stat["privacy"]
+        _LOGGER.error("Unsupported hack version (" + entry.data[CONF_HOST] + "), please update your cam")
+        return False
+    except KeyError:
+        privacy = None
 
     system_conf = await hass.async_add_executor_job(get_system_conf, entry.data)
     mqtt_conf = await hass.async_add_executor_job(get_mqtt_conf, entry.data)
@@ -117,8 +122,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
         return True
     else:
-        _LOGGER.error("Unable to get configuration from the cam")
-        return False
+        raise ConfigEntryNotReady(
+            f"Unable to get configuration from camera at {entry.data[CONF_HOST]}"
+        )
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):

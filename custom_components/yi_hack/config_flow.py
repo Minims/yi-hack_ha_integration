@@ -4,8 +4,7 @@ import logging
 
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
-from homeassistant.components import zeroconf
+from homeassistant.config_entries import ConfigEntry, ConfigFlowResult
 from homeassistant.components.ffmpeg import CONF_EXTRA_ARGUMENTS
 from homeassistant.const import (CONF_HOST, CONF_MAC, CONF_NAME, CONF_PASSWORD,
                                  CONF_PORT, CONF_USERNAME)
@@ -59,6 +58,15 @@ class YiHackFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     def __init__(self) -> None:
         """Set up the instance."""
         self.connection_data: dict[str, Any] = {}
+
+    def _async_entry_for_mac(self, mac: str) -> ConfigEntry | None:
+        """Return an existing entry matching a normalized MAC address."""
+        for entry in self._async_current_entries():
+            entry_mac = entry.data.get(CONF_MAC)
+            if isinstance(entry_mac, str) and format_mac(entry_mac) == mac:
+                return entry
+
+        return None
 
     async def async_process_input(
         self, user_input: dict[str, Any] | None = None
@@ -127,10 +135,14 @@ class YiHackFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 await self.async_set_unique_id(user_input[CONF_MAC])
                 self._abort_if_unique_id_configured()
 
-                for entry in self._async_current_entries():
-                    if entry.data[CONF_MAC] == user_input[CONF_MAC]:
-                        _LOGGER.error("Device already configured: %s", host)
-                        return self.async_abort(reason="already_configured")
+                # An existing entry may have the MAC in its data but a missing
+                # or differently formatted unique ID. Normalize it so future
+                # discoveries are matched to the configured camera.
+                if entry := self._async_entry_for_mac(user_input[CONF_MAC]):
+                    self.hass.config_entries.async_update_entry(
+                        entry, unique_id=user_input[CONF_MAC]
+                    )
+                    self._abort_if_unique_id_configured()
 
                 user_input[CONF_RTSP_PORT] = None
                 user_input[CONF_MQTT_PREFIX] = None
@@ -163,8 +175,6 @@ class YiHackFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         self, discovery_info: ZeroconfServiceInfo
     ) -> ConfigFlowResult:
         """Handle a flow initialized by zeroconf discovery."""
-        errors = {}
-
         host = discovery_info.host
         if discovery_info.port is not None and discovery_info.port != 0:
             port = discovery_info.port
@@ -173,16 +183,23 @@ class YiHackFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
         hostname = discovery_info.hostname
         name = discovery_info.name.split(".", 1)[0]
-        mac = discovery_info.properties["mac"]
+        discovered_mac = discovery_info.properties.get("mac")
 
-        mac = format_mac(mac)
-
-        if hostname is None:
+        if hostname is None or not discovered_mac:
             return self.async_abort(reason="not_yi-hack_device")
 
-        _LOGGER.info("Device with MAC %s already exists, update IP to %s and port to %s", mac, host, port)
+        mac = format_mac(discovered_mac)
+
         await self.async_set_unique_id(mac)
         self._abort_if_unique_id_configured(updates={CONF_HOST: host, CONF_PORT: port})
+
+        # Also match entries whose stored MAC is correct but whose unique ID is
+        # missing or uses a different format.
+        if entry := self._async_entry_for_mac(mac):
+            self.hass.config_entries.async_update_entry(entry, unique_id=mac)
+            self._abort_if_unique_id_configured(
+                updates={CONF_HOST: host, CONF_PORT: port}
+            )
 
         self.context.update(
             {
