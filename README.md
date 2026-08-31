@@ -56,16 +56,18 @@ It should look similar to this:
 |       |-- binary_sensor.py
 |       |-- button.py
 |       |-- camera.py
-|       |-- config.py
 |       |-- config_flow.py
 |       |-- const.py
+|       |-- coordinator.py
 |       |-- manifest.json
 |       |-- media_player.py
 |       |-- media_source.py
 |       |-- select.py
+|       |-- sensor.py
 |       |-- services.yaml
 |       |-- strings.json
 |       |-- switch.py
+|       |-- update.py
 |       |-- views.py
 ```
 **(2)** Restart Home Assistant
