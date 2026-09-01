@@ -10,7 +10,12 @@ from homeassistant.const import CONF_MAC
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .common import get_device_info, get_firmware_info
+from .common import (
+    YiHackAuthenticationError,
+    YiHackError,
+    get_device_info,
+    get_firmware_info,
+)
 from .const import CONF_FIRMWARE_VERSION
 
 SCAN_INTERVAL = timedelta(hours=6)
@@ -42,10 +47,15 @@ class YiHackFirmwareUpdate(UpdateEntity):
 
     async def async_update(self) -> None:
         """Fetch firmware update information from the camera."""
-        info = await self.hass.async_add_executor_job(
-            get_firmware_info, self._config_entry.data
-        )
-        if info is None:
+        try:
+            info = await self.hass.async_add_executor_job(
+                get_firmware_info, self._config_entry.data
+            )
+        except YiHackAuthenticationError:
+            self._config_entry.async_start_reauth(self.hass)
+            self._attr_available = False
+            return
+        except YiHackError:
             self._attr_available = False
             return
 
