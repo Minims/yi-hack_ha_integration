@@ -5,7 +5,6 @@ from unittest.mock import patch
 
 import pytest
 from homeassistant.components.ffmpeg import CONF_EXTRA_ARGUMENTS
-from homeassistant.components.zeroconf import ZeroconfServiceInfo
 from homeassistant.const import (
     CONF_HOST,
     CONF_MAC,
@@ -14,6 +13,7 @@ from homeassistant.const import (
     CONF_USERNAME,
 )
 from homeassistant.data_entry_flow import AbortFlow, FlowResultType
+from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
 
 from custom_components.yi_hack.common import (
     YiHackAuthenticationError,

@@ -38,6 +38,7 @@ def add_config_entry(
         source="user",
         unique_id=unique_id,
         discovery_keys=MappingProxyType({}),
+        subentries_data=None,
         options={},
         pref_disable_new_entities=None,
         pref_disable_polling=None,
