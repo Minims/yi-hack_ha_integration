@@ -35,7 +35,7 @@ class YiHackFirmwareUpdate(UpdateEntity):
 
     _attr_device_class = UpdateDeviceClass.FIRMWARE
     _attr_has_entity_name = True
-    _attr_name = "Firmware"
+    _attr_translation_key = "firmware"
 
     def __init__(self, config_entry: ConfigEntry) -> None:
         """Initialize the firmware update entity."""

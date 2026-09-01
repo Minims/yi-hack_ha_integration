@@ -5,8 +5,6 @@ from __future__ import annotations
 import logging
 
 import requests
-from requests.auth import HTTPBasicAuth
-
 from homeassistant.components.button import ButtonDeviceClass, ButtonEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -19,6 +17,7 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from requests.auth import HTTPBasicAuth
 
 from .common import get_device_info
 from .const import HTTP_TIMEOUT
@@ -41,6 +40,7 @@ class YiHackRestartButton(ButtonEntity):
     _attr_device_class = ButtonDeviceClass.RESTART
     _attr_entity_category = EntityCategory.CONFIG
     _attr_has_entity_name = True
+    _attr_translation_key = "restart"
 
     def __init__(self, config_entry: ConfigEntry) -> None:
         """Initialize the restart button."""
@@ -65,9 +65,7 @@ class YiHackRestartButton(ButtonEntity):
                 auth=auth,
             )
             if response.status_code >= 300:
-                _LOGGER.error(
-                    "Failed to send restart command to device %s", self._host
-                )
+                _LOGGER.error("Failed to send restart command to device %s", self._host)
         except requests.exceptions.RequestException as error:
             _LOGGER.error(
                 "Failed to send restart command to device %s: %s",

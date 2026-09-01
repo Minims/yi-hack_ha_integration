@@ -60,9 +60,9 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up yi-hack diagnostic sensors."""
-    coordinator: YiHackDataUpdateCoordinator = hass.data[DOMAIN][
-        config_entry.entry_id
-    ][DATA_COORDINATOR]
+    coordinator: YiHackDataUpdateCoordinator = hass.data[DOMAIN][config_entry.entry_id][
+        DATA_COORDINATOR
+    ]
     async_add_entities(
         [
             YiHackStatusSensor(coordinator, config_entry, SENSOR_WIFI_QUALITY),
@@ -72,9 +72,7 @@ async def async_setup_entry(
     )
 
 
-class YiHackStatusSensor(
-    CoordinatorEntity[YiHackDataUpdateCoordinator], SensorEntity
-):
+class YiHackStatusSensor(CoordinatorEntity[YiHackDataUpdateCoordinator], SensorEntity):
     """Representation of a value returned by status.json."""
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
@@ -93,17 +91,15 @@ class YiHackStatusSensor(
         self._sensor_type = sensor_type
         self._attr_unique_id = f"{config_entry.data[CONF_MAC]}_{sensor_type}"
         self._attr_device_info = get_device_info(config_entry)
+        self._attr_translation_key = sensor_type
 
         if sensor_type == SENSOR_WIFI_QUALITY:
-            self._attr_name = "Wi-Fi quality"
             self._attr_icon = "mdi:wifi"
             self._attr_native_unit_of_measurement = PERCENTAGE
         elif sensor_type == SENSOR_STORAGE_FREE:
-            self._attr_name = "Storage free"
             self._attr_icon = "mdi:micro-sd"
             self._attr_native_unit_of_measurement = PERCENTAGE
         elif sensor_type == SENSOR_UPTIME:
-            self._attr_name = "Uptime"
             self._attr_device_class = SensorDeviceClass.DURATION
             self._attr_native_unit_of_measurement = UnitOfTime.SECONDS
         else:
