@@ -6,6 +6,8 @@ import logging
 from typing import Any
 
 import aiohttp
+from aiohttp import hdrs
+from aiohttp.helpers import encode_basic_auth
 from homeassistant.components.media_player import MediaClass, MediaType
 from homeassistant.components.media_source import (
     BrowseMediaSource,
@@ -129,13 +131,15 @@ class YiHackMediaSource(MediaSource):
         data = config_entry.data
         username = data.get(CONF_USERNAME, "")
         password = data.get(CONF_PASSWORD, "")
-        auth = aiohttp.BasicAuth(username, password) if username or password else None
+        headers = None
+        if username or password:
+            headers = {hdrs.AUTHORIZATION: encode_basic_auth(username, password)}
         session = async_get_clientsession(self.hass)
 
         try:
             async with session.post(
                 build_camera_url(data, endpoint, query),
-                auth=auth,
+                headers=headers,
                 timeout=aiohttp.ClientTimeout(total=HTTP_TIMEOUT),
             ) as response:
                 if response.status in (401, 403):

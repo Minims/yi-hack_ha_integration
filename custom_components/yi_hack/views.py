@@ -8,7 +8,8 @@ from ipaddress import ip_address
 from typing import Any
 
 import aiohttp
-from aiohttp import BasicAuth, hdrs, web
+from aiohttp import hdrs, web
+from aiohttp.helpers import encode_basic_auth
 from aiohttp.web_exceptions import HTTPBadGateway
 from homeassistant.components.http import HomeAssistantView
 from homeassistant.config_entries import ConfigEntry
@@ -114,9 +115,8 @@ class VideoProxyView(HomeAssistantView):
         data = await request.read()
         source_header = _init_header(request)
 
-        auth = None
         if user or password:
-            auth = BasicAuth(user, password)
+            source_header[hdrs.AUTHORIZATION] = encode_basic_auth(user, password)
 
         async with self._websession.request(
             request.method,
@@ -125,7 +125,6 @@ class VideoProxyView(HomeAssistantView):
             params=request.query,
             allow_redirects=False,
             data=data,
-            auth=auth,
         ) as result:
             headers = _response_header(result)
 
